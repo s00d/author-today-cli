@@ -11,9 +11,6 @@ dist/
 .env.local
 .env.*.local
 
-# Auth token
-.auth-token.json
-
 # Downloads
 downloads/
 

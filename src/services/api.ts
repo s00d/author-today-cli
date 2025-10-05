@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import fs from 'fs-extra';
 import path from 'path';
+import os from 'os';
 import { AudioBook, AudioChapter, WorkMetaInfo, UserLibraryInfo, ApiErrorResponse } from '../types';
 
 export interface AccessToken {
@@ -29,7 +30,13 @@ export class AuthorTodayAPI {
   private tokenFile: string;
 
   constructor() {
-    this.tokenFile = path.join(process.cwd(), '.auth-token.json');
+    // Сохраняем токен в системной папке пользователя
+    const homeDir = os.homedir();
+    const configDir = path.join(homeDir, '.config', 'author-today-cli');
+    this.tokenFile = path.join(configDir, 'auth-token.json');
+    
+    // Создаем папку конфигурации если её нет
+    fs.ensureDirSync(configDir);
     
     this.api = axios.create({
       baseURL: this.baseURL,
@@ -239,6 +246,7 @@ export class AuthorTodayAPI {
         headers
       });
       
+      // Сохраняем токен только если он есть (успешная авторизация)
       if (response.data && response.data.token) {
         this.accessToken = response.data.token;
         this.refreshToken = response.data.token;

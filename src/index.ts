@@ -154,11 +154,12 @@ async function loginUser(): Promise<void> {
         if (userResponse.data && typeof userResponse.data === 'object') {
           const userData = userResponse.data as Record<string, unknown>;
           const nickname = userData.nickname as string;
-          const login = userData.login as string;
-          console.log(chalk.green(`Добро пожаловать, ${nickname || login}!`));
+          const userLogin = userData.login as string;
+          const displayName = nickname || userLogin || login;
+          console.log(chalk.green(`Добро пожаловать, ${displayName}!`));
         }
       } catch (error) {
-        console.log(chalk.yellow('Не удалось получить информацию о пользователе'));
+        console.log(chalk.green(`Добро пожаловать, ${login}!`));
       }
     }
   } catch (error: unknown) {
@@ -408,15 +409,14 @@ async function showInteractiveMenu() {
   }
   console.log('');
 
-  const choices = [
-    { name: '🔍 Поиск и скачивание аудиокниг', value: 'search' },
-    { name: '📖 Скачать книгу по ID', value: 'download' },
-    { name: '💾 Показать скачанные книги', value: 'list-downloaded' }
-  ];
+  const choices: { name: string; value: string }[] = [];
 
-  // Добавляем команды авторизации в зависимости от статуса
+  // Добавляем функциональные команды только для авторизованных пользователей
   if (api.isAuthenticated()) {
     choices.push(
+      { name: '🔍 Поиск и скачивание аудиокниг', value: 'search' },
+      { name: '📖 Скачать книгу по ID', value: 'download' },
+      { name: '💾 Показать скачанные книги', value: 'list-downloaded' },
       { name: '👤 Показать статус авторизации', value: 'status' },
       { name: '🚪 Выйти из системы', value: 'logout' }
     );
