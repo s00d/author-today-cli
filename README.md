@@ -1,5 +1,12 @@
 # Author Today CLI
 
+[![npm version](https://img.shields.io/npm/v/author-today-cli/latest?style=for-the-badge)](https://www.npmjs.com/package/author-today-cli)
+[![GitHub issues](https://img.shields.io/github/issues/author-today/cli?style=for-the-badge)](https://github.com/author-today/cli/issues)
+[![GitHub stars](https://img.shields.io/github/stars/author-today/cli?style=for-the-badge)](https://github.com/author-today/cli/stargazers)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](https://github.com/author-today/cli/blob/main/LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-16%2B-green?style=for-the-badge)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-blue?style=for-the-badge)](https://www.typescriptlang.org/)
+
 🎧 CLI инструмент для загрузки аудиокниг с платформы Author Today
 
 ## ⚠️ Важная информация

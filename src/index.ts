@@ -191,10 +191,13 @@ async function showAuthStatus(): Promise<void> {
         const userData = userResponse.data as Record<string, unknown>;
         const nickname = userData.nickname as string;
         const login = userData.login as string;
-        console.log(chalk.green(`Пользователь: ${nickname || login}`));
+        const displayName = nickname || login || 'Пользователь';
+        console.log(chalk.green(`Пользователь: ${displayName}`));
+      } else {
+        console.log(chalk.green('Пользователь: Авторизован'));
       }
     } catch (error) {
-      console.log(chalk.yellow('Не удалось получить информацию о пользователе'));
+      console.log(chalk.green('Пользователь: Авторизован'));
     }
   } else {
     console.log(chalk.red('❌ Вы не авторизованы'));

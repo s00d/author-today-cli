@@ -1,6 +1,6 @@
 {
   "name": "author-today-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI инструмент для загрузки аудиокниг с платформы Author Today",
   "main": "dist/index.js",
   "bin": {
