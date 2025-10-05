@@ -1,6 +1,6 @@
 {
   "name": "author-today-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI инструмент для загрузки аудиокниг с платформы Author Today",
   "main": "dist/index.js",
   "bin": {
@@ -48,8 +48,7 @@
     "cli-table3": "^0.6.5",
     "commander": "^14.0.1",
     "fs-extra": "^11.3.2",
-    "inquirer": "^12.9.6",
-    "inquirer-autocomplete-prompt": "^3.0.1"
+    "inquirer": "^12.9.6"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
