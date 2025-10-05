@@ -62,7 +62,7 @@ at-cli search --concurrent 5
 at-cli search --retries 5
 
 # Скачивание в определенную папку
-at-cli search --output ./my-books --concurrent 3 --retries 3
+at-cli search --output ./my-audiobooks --concurrent 3 --retries 3
 
 # Выход из системы
 at-cli logout
@@ -72,7 +72,7 @@ at-cli logout
 
 ```bash
 # Скачивание с указанием папки
-at-cli download 12345 --output ./my-books
+at-cli download 12345 --output ./my-audiobooks
 
 # Поиск с фильтром
 at-cli search --query "фантастика"
@@ -97,7 +97,7 @@ at-cli download 12345 --concurrent 5
 ## Структура скачанных файлов
 
 ```
-downloads/
+audiobooks/
 ├── Название книги 1/
 │   ├── book-info.json          # Информация о книге
 │   ├── cover.jpg                # Обложка книги

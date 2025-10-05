@@ -63,7 +63,7 @@ program
   .command('search')
   .description('Поиск и скачивание аудиокниг')
   .option('-q, --query <query>', 'Поисковый запрос')
-  .option('-o, --output <dir>', 'Папка для скачивания', './downloads')
+  .option('-o, --output <dir>', 'Папка для скачивания', './audiobooks')
   .option('-c, --concurrent <number>', 'Количество одновременных загрузок', '3')
   .option('-r, --retries <number>', 'Количество попыток при ошибке', '3')
   .action(async (options) => {
@@ -79,7 +79,7 @@ program
 program
   .command('list-downloaded')
   .description('Показать скачанные аудиокниги')
-  .option('-o, --output <dir>', 'Папка с загрузками', './downloads')
+  .option('-o, --output <dir>', 'Папка с загрузками', './audiobooks')
   .action(async (options) => {
     try {
       await listDownloadedBooks(options.output);
@@ -93,7 +93,7 @@ program
 program
   .command('download <bookId>')
   .description('Скачать аудиокнигу по ID')
-  .option('-o, --output <dir>', 'Папка для скачивания', './downloads')
+  .option('-o, --output <dir>', 'Папка для скачивания', './audiobooks')
   .action(async (bookId, options) => {
     try {
       await downloadBookById(parseInt(bookId), options);
@@ -449,10 +449,10 @@ async function showInteractiveMenu() {
       await showAuthStatus();
       break;
     case 'search':
-      await searchAndDownload({ output: './downloads' });
+      await searchAndDownload({ output: './audiobooks' });
       break;
     case 'list-downloaded':
-      await listDownloadedBooks('./downloads');
+      await listDownloadedBooks('./audiobooks');
       break;
     case 'download':
       const { bookId } = await inquirer.prompt([
@@ -463,7 +463,7 @@ async function showInteractiveMenu() {
           validate: (input) => !isNaN(parseInt(input)) || 'Введите корректный ID'
         }
       ]);
-      await downloadBookById(parseInt(bookId), { output: './downloads' });
+      await downloadBookById(parseInt(bookId), { output: './audiobooks' });
       break;
     case 'exit':
       console.log(chalk.green('До свидания! 👋'));
