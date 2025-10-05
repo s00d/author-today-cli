@@ -1,0 +1,60 @@
+{
+  "name": "author-today-cli",
+  "version": "1.0.0",
+  "description": "CLI инструмент для загрузки аудиокниг с платформы Author Today",
+  "main": "dist/index.js",
+  "bin": {
+    "at-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "prepublishOnly": "pnpm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "audiobooks",
+    "cli",
+    "author-today",
+    "download",
+    "books",
+    "audio",
+    "russian",
+    "literature"
+  ],
+  "author": "Author Today CLI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/author-today/cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/author-today/cli/issues"
+  },
+  "homepage": "https://github.com/author-today/cli#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@inquirer/prompts": "^7.8.6",
+    "axios": "^1.12.2",
+    "chalk": "^5.6.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.1",
+    "fs-extra": "^11.3.2",
+    "inquirer": "^12.9.6",
+    "inquirer-autocomplete-prompt": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^24.6.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

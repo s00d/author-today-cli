@@ -1,0 +1,55 @@
+# Source files
+src/
+tsconfig.json
+tsconfig.node.json
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Auth token
+.auth-token.json
+
+# Downloads
+downloads/
+
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Build files
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files
+test/
+tests/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
