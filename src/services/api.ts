@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
 import { AudioBook, AudioChapter, WorkMetaInfo, UserLibraryInfo, ApiErrorResponse } from '../types';
+import packageJson from '../../package.json';
 
 export interface AccessToken {
   token: string;
@@ -42,7 +43,7 @@ export class AuthorTodayAPI {
       baseURL: this.baseURL,
       timeout: 30000,
       headers: {
-        'User-Agent': 'AuthorToday-CLI/1.0.0',
+        'User-Agent': `AuthorToday-CLI/${packageJson.version}`,
         'Accept': 'application/json',
       }
     });
@@ -164,7 +165,7 @@ export class AuthorTodayAPI {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'User-Agent': 'AuthorToday-CLI/1.0.0'
+      'User-Agent': `AuthorToday-CLI/${packageJson.version}`
     };
 
     if (includeAuth) {

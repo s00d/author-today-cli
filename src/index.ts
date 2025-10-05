@@ -3,12 +3,12 @@
 import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import path from 'path';
 import fs from 'fs-extra';
 import { AuthorTodayAPI, LoginData } from './services/api';
 import { DownloadManager } from './services/download';
 import { AudioBook, DownloadOptions } from './types';
 import { search } from '@inquirer/prompts';
+import packageJson from '../package.json';
 
 const program = new Command();
 const api = new AuthorTodayAPI();
@@ -17,7 +17,7 @@ const downloadManager = new DownloadManager(api);
 program
   .name('author-today-cli')
   .description('CLI для загрузки аудиокниг с Author Today')
-  .version('1.0.0');
+  .version(packageJson.version);
 
 // Команда для авторизации
 program
