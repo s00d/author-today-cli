@@ -118,6 +118,12 @@ export interface DownloadOptions {
   skipExisting: boolean;
   concurrentDownloads: number;
   maxRetries?: number; // Максимальное количество попыток при ошибке
+  organizeBySeries?: boolean; // Организация по сериям
+  seriesFolderTemplate?: string; // Шаблон папки серии
+  workFolderTemplate?: string; // Шаблон папки книги
+  standaloneFolder?: string; // Папка для книг без серии
+  maxFolderNameLength?: number; // Максимальная длина имени папки
+  sanitizeNames?: boolean; // Очистка имен файлов
 }
 
 // Типы ошибок API
@@ -137,4 +143,33 @@ export interface ApiErrorResponse {
   rateLimit?: number;
   period?: string;
   retryAfter?: number;
+}
+
+// Типы для работы с сериями
+export interface Series {
+  id: number;
+  title: string;
+  description?: string;
+  works: AudioBook[];
+  totalWorks: number;
+  completedWorks: number;
+}
+
+export interface SeriesInfo {
+  id: number;
+  title: string;
+  description?: string;
+  worksCount: number;
+  completedWorksCount: number;
+  firstWorkId?: number;
+  lastWorkId?: number;
+}
+
+export interface OrganizationConfig {
+  bySeries: boolean;
+  seriesFolderTemplate: string;
+  workFolderTemplate: string;
+  standaloneFolder: string;
+  maxFolderNameLength: number;
+  sanitizeNames: boolean;
 }

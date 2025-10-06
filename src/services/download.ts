@@ -2,7 +2,8 @@ import fs from 'fs-extra';
 import path from 'path';
 import axios from 'axios';
 import chalk from 'chalk';
-import { AudioBook, AudioChapter, DownloadOptions, DownloadProgress } from '../types';
+import { AudioBook, AudioChapter, DownloadOptions, DownloadProgress, OrganizationConfig } from '../types';
+import { Logger } from '../utils/logger';
 
 /**
  * Простой семафор для ограничения количества одновременных операций
@@ -38,6 +39,14 @@ class Semaphore {
 
 export class DownloadManager {
   private api: any;
+  private defaultConfig: OrganizationConfig = {
+    bySeries: true,
+    seriesFolderTemplate: '{series}',
+    workFolderTemplate: '{order:03d}. {title}',
+    standaloneFolder: 'Отдельные книги',
+    maxFolderNameLength: 100,
+    sanitizeNames: true
+  };
 
   constructor(api: any) {
     this.api = api;
@@ -51,19 +60,24 @@ export class DownloadManager {
     options: DownloadOptions,
     onProgress?: (progress: DownloadProgress) => void
   ): Promise<void> {
-    const bookDir = path.join(options.outputDir, this.sanitizeFileName(book.title));
+    // Определяем путь для книги с учетом организации по сериям
+    const bookDir = this.getBookDirectory(book, options);
+    Logger.verbose(`Путь для книги: ${bookDir}`);
     
     // Создаем папку для книги
+    Logger.mkdir(bookDir);
     await fs.ensureDir(bookDir);
 
     // Очищаем временные файлы при повторном скачивании
     await this.cleanupTempFiles(bookDir);
 
     // Создаем файл с информацией о книге
+    Logger.file('Создаем', 'book-info.json', bookDir);
     await this.saveBookInfo(book, bookDir);
 
     // Скачиваем обложку если есть и не существует
     if (book.coverUrl && !await this.coverExists(bookDir)) {
+      Logger.download('Скачиваем обложку', book.coverUrl);
       await this.downloadCover(book.coverUrl, bookDir);
     }
 
@@ -73,19 +87,19 @@ export class DownloadManager {
     // Получаем главы если их нет
     let chapters = book.chapters || [];
     if (chapters.length === 0) {
+      Logger.verbose('Получаем список глав...');
       chapters = await this.api.getAudioChapters(book.id);
     }
 
-    console.log(chalk.blue(`Начинаем скачивание: ${book.title}`));
-    console.log(chalk.gray(`Автор: ${book.authorFIO}`));
-    console.log(chalk.gray(`Глав: ${chapters.length}`));
-    console.log(chalk.gray(`Папка: ${bookDir}`));
-    console.log('');
+    Logger.info(`Начинаем скачивание: ${book.title}`);
+    Logger.verbose(`Автор: ${book.authorFIO}`);
+    Logger.verbose(`Глав: ${chapters.length}`);
+    Logger.verbose(`Папка: ${bookDir}`);
 
     // Скачиваем главы параллельно
     await this.downloadChaptersParallel(book.id, chapters, bookDir, options, onProgress);
 
-    console.log(chalk.green(`\n✓ Аудиокнига "${book.title}" успешно скачана!`));
+    Logger.success(`Аудиокнига "${book.title}" успешно скачана!`);
   }
 
   /**
@@ -108,7 +122,7 @@ export class DownloadManager {
       
       // Проверяем, существует ли файл
       if (options.skipExisting && await fs.pathExists(chapterPath)) {
-        console.log(chalk.yellow(`Пропускаем: ${chapter.title} (уже существует)`));
+        Logger.verbose(`Пропускаем: ${chapter.title} (уже существует)`);
         continue;
       }
 
@@ -120,11 +134,11 @@ export class DownloadManager {
     }
 
     if (chaptersToDownload.length === 0) {
-      console.log(chalk.green('Все главы уже скачаны!'));
+      Logger.success('Все главы уже скачаны!');
       return;
     }
 
-    console.log(chalk.blue(`Скачиваем ${chaptersToDownload.length} глав в ${concurrentDownloads} потоков...`));
+    Logger.info(`Скачиваем ${chaptersToDownload.length} глав в ${concurrentDownloads} потоков...`);
 
     // Создаем семафор для ограничения количества одновременных загрузок
     const semaphore = new Semaphore(concurrentDownloads);
@@ -160,7 +174,7 @@ export class DownloadManager {
           activeDownloads.delete(chapter.id.toString());
           completedChapters++;
           
-          console.log(`\n${chalk.green(`✓ Скачано: ${chapter.title} (${completedChapters}/${totalChapters})`)}`);
+          Logger.success(`Скачано: ${chapter.title} (${completedChapters}/${totalChapters})`);
           break; // Успешно скачано, выходим из цикла
           
         } catch (error) {
@@ -168,16 +182,16 @@ export class DownloadManager {
           activeDownloads.delete(chapter.id.toString());
           
           if (attempts < maxAttempts) {
-            console.log(`\n${chalk.yellow(`⚠️  Ошибка скачивания: ${chapter.title} (попытка ${attempts}/${maxAttempts})`)}`);
-            console.log(chalk.yellow(`  ${error}`));
-            console.log(chalk.blue(`🔄 Повторная попытка через 2 секунды...`));
+            Logger.warn(`Ошибка скачивания: ${chapter.title} (попытка ${attempts}/${maxAttempts})`);
+            Logger.verbose(`  ${error}`);
+            Logger.verbose('Повторная попытка через 2 секунды...');
             
             // Ждем перед повторной попыткой
             await new Promise(resolve => setTimeout(resolve, 2000));
           } else {
             completedChapters++;
-            console.log(`\n${chalk.red(`✗ Окончательная ошибка скачивания: ${chapter.title} (${maxAttempts} попыток)`)}`);
-            console.log(chalk.red(`  ${error}`));
+            Logger.error(`Окончательная ошибка скачивания: ${chapter.title} (${maxAttempts} попыток)`);
+            Logger.error(`  ${error}`);
           }
         }
       }
@@ -186,7 +200,7 @@ export class DownloadManager {
     });
 
     await Promise.all(downloadPromises);
-    console.log(`\n${chalk.green('✓ Все главы скачаны!')}`);
+    Logger.success('Все главы скачаны!');
   }
 
   /**
@@ -330,7 +344,7 @@ export class DownloadManager {
    */
   private async downloadCover(coverUrl: string, bookDir: string): Promise<void> {
     try {
-      console.log(chalk.blue('📸 Скачиваем обложку...'));
+      Logger.verbose('Скачиваем обложку...');
       
       const response = await axios.get(coverUrl, {
         responseType: 'stream',
@@ -360,7 +374,7 @@ export class DownloadManager {
           try {
             // Переименовываем временный файл в финальный
             await fs.move(tempCoverPath, coverPath);
-            console.log(chalk.green('✅ Обложка скачана'));
+            Logger.success('Обложка скачана');
             resolve();
           } catch (error) {
             reject(error);
@@ -373,7 +387,8 @@ export class DownloadManager {
         });
       });
     } catch (error) {
-      console.log(chalk.yellow('⚠️  Не удалось скачать обложку'));
+      Logger.warn('Не удалось скачать обложку');
+      Logger.verbose(`Ошибка: ${error}`);
     }
   }
 
@@ -388,10 +403,11 @@ export class DownloadManager {
       if (book.annotation) {
         const annotationPath = path.join(bookDir, 'annotation.txt');
         await fs.writeFile(annotationPath, book.annotation, 'utf8');
-        console.log(chalk.green('📄 Аннотация сохранена'));
+        Logger.verbose('Аннотация сохранена');
       }
     } catch (error) {
-      console.log(chalk.yellow('⚠️  Не удалось сохранить дополнительные файлы'));
+      Logger.warn('Не удалось сохранить дополнительные файлы');
+      Logger.verbose(`Ошибка: ${error}`);
     }
   }
 
@@ -405,7 +421,7 @@ export class DownloadManager {
         if (file.endsWith('.tmp')) {
           const tempPath = path.join(bookDir, file);
           await fs.unlink(tempPath);
-          console.log(chalk.yellow(`🗑️  Удален временный файл: ${file}`));
+          Logger.cleanup(`Удален временный файл: ${file}`);
         }
       }
     } catch (error) {
@@ -425,5 +441,178 @@ export class DownloadManager {
       }
     }
     return false;
+  }
+
+  /**
+   * Получить путь для книги с учетом организации по сериям
+   */
+  private getBookDirectory(book: AudioBook, options: DownloadOptions): string {
+    const config = this.mergeConfig(options);
+    
+    if (!config.bySeries || !book.seriesTitle) {
+      // Книга без серии - помещаем в папку для отдельных книг
+      const standaloneDir = path.join(options.outputDir, config.standaloneFolder);
+      const bookName = this.formatFolderName(book.title, config);
+      return path.join(standaloneDir, bookName);
+    }
+
+    // Книга из серии - создаем структуру папок
+    const seriesName = this.formatFolderName(book.seriesTitle, config);
+    const seriesDir = path.join(options.outputDir, seriesName);
+    
+    // Формируем имя папки книги по шаблону
+    const bookName = this.formatWorkFolderName(book, config);
+    return path.join(seriesDir, bookName);
+  }
+
+  /**
+   * Объединить конфигурацию с настройками по умолчанию
+   */
+  private mergeConfig(options: DownloadOptions): OrganizationConfig {
+    return {
+      bySeries: options.organizeBySeries ?? this.defaultConfig.bySeries,
+      seriesFolderTemplate: options.seriesFolderTemplate ?? this.defaultConfig.seriesFolderTemplate,
+      workFolderTemplate: options.workFolderTemplate ?? this.defaultConfig.workFolderTemplate,
+      standaloneFolder: options.standaloneFolder ?? this.defaultConfig.standaloneFolder,
+      maxFolderNameLength: options.maxFolderNameLength ?? this.defaultConfig.maxFolderNameLength,
+      sanitizeNames: options.sanitizeNames ?? this.defaultConfig.sanitizeNames
+    };
+  }
+
+  /**
+   * Форматировать имя папки
+   */
+  private formatFolderName(name: string, config: OrganizationConfig): string {
+    let formattedName = name;
+    
+    if (config.sanitizeNames) {
+      formattedName = this.sanitizeFileName(formattedName);
+    }
+    
+    // Ограничиваем длину имени
+    if (formattedName.length > config.maxFolderNameLength) {
+      formattedName = formattedName.substring(0, config.maxFolderNameLength).trim();
+    }
+    
+    return formattedName;
+  }
+
+  /**
+   * Форматировать имя папки книги по шаблону
+   */
+  private formatWorkFolderName(book: AudioBook, config: OrganizationConfig): string {
+    let folderName = config.workFolderTemplate;
+    
+    // Заменяем плейсхолдеры
+    folderName = folderName.replace('{title}', book.title);
+    folderName = folderName.replace('{order:03d}', String(book.seriesOrder || 0).padStart(3, '0'));
+    folderName = folderName.replace('{order}', String(book.seriesOrder || 0));
+    folderName = folderName.replace('{author}', book.authorFIO);
+    folderName = folderName.replace('{series}', book.seriesTitle || '');
+    
+    return this.formatFolderName(folderName, config);
+  }
+
+  /**
+   * Скачать всю серию
+   */
+  async downloadSeries(
+    seriesId: number,
+    options: DownloadOptions,
+    onProgress?: (progress: { book: string; progress: DownloadProgress }) => void
+  ): Promise<void> {
+    try {
+      const series = await this.api.getSeriesDetails(seriesId);
+      if (!series) {
+        throw new Error('Серия не найдена');
+      }
+
+      Logger.info(`Начинаем скачивание серии: ${series.title}`);
+      Logger.verbose(`Книг в серии: ${series.works.length}`);
+
+      for (let i = 0; i < series.works.length; i++) {
+        const book = series.works[i];
+        Logger.info(`Скачиваем книгу ${i + 1}/${series.works.length}: ${book.title}`);
+        
+        await this.downloadAudioBook(book, options, (progress) => {
+          if (onProgress) {
+            onProgress({
+              book: book.title,
+              progress
+            });
+          }
+        });
+        
+        Logger.success(`Книга "${book.title}" скачана`);
+      }
+
+      Logger.success(`Серия "${series.title}" полностью скачана!`);
+    } catch (error) {
+      Logger.error(`Ошибка скачивания серии: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Получить список скачанных серий
+   */
+  async getDownloadedSeries(outputDir: string): Promise<string[]> {
+    try {
+      const dirs = await fs.readdir(outputDir);
+      const series: string[] = [];
+
+      for (const dir of dirs) {
+        const seriesPath = path.join(outputDir, dir);
+        const stat = await fs.stat(seriesPath);
+        
+        if (stat.isDirectory()) {
+          // Проверяем, содержит ли папка книги (есть ли подпапки с book-info.json)
+          const subDirs = await fs.readdir(seriesPath);
+          const hasBooks = subDirs.some(subDir => {
+            const bookPath = path.join(seriesPath, subDir);
+            return fs.pathExists(path.join(bookPath, 'book-info.json'));
+          });
+          
+          if (hasBooks) {
+            series.push(dir);
+          }
+        }
+      }
+
+      return series;
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
+   * Получить информацию о скачанной серии
+   */
+  async getDownloadedSeriesInfo(outputDir: string, seriesName: string): Promise<any> {
+    try {
+      const seriesPath = path.join(outputDir, seriesName);
+      const subDirs = await fs.readdir(seriesPath);
+      const books: any[] = [];
+
+      for (const subDir of subDirs) {
+        const bookPath = path.join(seriesPath, subDir);
+        const stat = await fs.stat(bookPath);
+        
+        if (stat.isDirectory()) {
+          const bookInfo = await this.getDownloadedBookInfo(seriesPath, subDir);
+          if (bookInfo) {
+            books.push(bookInfo);
+          }
+        }
+      }
+
+      return {
+        name: seriesName,
+        books: books.sort((a, b) => a.title.localeCompare(b.title)),
+        totalBooks: books.length
+      };
+    } catch (error) {
+      return null;
+    }
   }
 }
